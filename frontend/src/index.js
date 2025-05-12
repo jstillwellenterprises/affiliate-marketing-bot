@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
 
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:10000";
+const API_URL = process.env.REACT_APP_API_URL || "https://affiliate-marketing-bot.onrender.com";
 
 function App() {
   const [deals, setDeals] = useState([]);
