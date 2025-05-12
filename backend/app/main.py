@@ -1,31 +1,37 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pymongo import MongoClient
+from pymongo import MongoClient, errors
 import os
 
 app = FastAPI()
 
-# Allow requests from frontend (CORS)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # NOTE: Lock this down in production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# MongoDB connection using environment variable
-mongo_uri = os.getenv("MONGO_URI")  # Set this in Render
-client = MongoClient(mongo_uri)
-db = client["affiliate"]  # your database name
-collection = db["deals"]  # your collection with scraped items
+try:
+    mongo_uri = os.getenv("MONGO_URI")
+    client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+    client.server_info()  # Force connection on startup
+    db = client["affiliate"]
+    collection = db["deals"]
+    print("✅ Connected to MongoDB")
+except errors.ServerSelectionTimeoutError as err:
+    print("❌ MongoDB connection failed:", err)
+    collection = None
 
 @app.get("/")
-def read_root():
-    return {"message": "Affiliate backend is live!"}
+def root():
+    return {"status": "OK"}
 
 @app.get("/deals")
 def get_deals():
-    # Return all documents, hide MongoDB _id
+    if collection is None:
+        return {"error": "Database connection failed"}
     return list(collection.find({}, {"_id": 0}))
+
 
